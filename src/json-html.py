@@ -1,14 +1,45 @@
 import json
 import sys
+import re
 from html import escape
 from collections import defaultdict
+
+# def extract_conjugations(definition):
+#     """Extract conjugated forms from parentheses pattern"""
+#     match = re.match(r'^(\w+)\s+\(([^)]+)\)\s+v\., inf\.', definition)
+#     return [word.strip() for word in match.group(1).split(',')] if match else []
+
+# Enhanced regex pattern
+CONJUGATION_PATTERN = re.compile(
+    r'\(+((?:\([^)]+\)|[^),])+?(?:,\s*(?:\([^)]+\)|[^),])+?){2})\)'  # Handles nested conjugations
+    r'(\s*\d+\.)?\s*v\.,?\s*inf\.',  # Handles numbered prefixes
+    re.IGNORECASE
+)
+
+def extract_conjugations(definition):
+    """Safely extract verb aspects while preserving root"""
+    match = CONJUGATION_PATTERN.search(definition)
+    if match:
+        return match.group(1).strip(), [c.strip() for c in match.group(1).split(',')]
+    return None, []
+
+def create_redirect_entry(conjugated_form, root_word):
+    """Generate Kindle-compatible cross-reference entry"""
+    return f'''
+    <idx:entry name="default" scriptable="yes" spell="yes">
+      <h5><dt><idx:orth>{escape(conjugated_form)}</idx:orth></dt></h5>
+      <dd>See: <a href="entry://{escape(root_word)}">{escape(root_word)}</a></dd>
+    </idx:entry>
+    <hr/>'''
 
 def json_to_kindle_html(input_file, output_file):
     stats = {
         'total_read': 0,
         'entries_written': 0,
         'unique_words': defaultdict(int),
-        'max_definitions': 0
+        'max_definitions': 0,
+        'verbs_found': 0,
+        'tenses_added': 0
     }
     
     with open(input_file, 'r', encoding='utf-8') as f:
@@ -29,6 +60,23 @@ def json_to_kindle_html(input_file, output_file):
             <hr/>"""
         )
         stats['entries_written'] += 1
+
+        root, conjugations = extract_conjugations(definition)
+        if conjugations:
+          stats['verbs_found'] += 1
+          effective_root = root or entry['word'].lower()
+          for form in conjugations:
+              stats['tenses_added'] += 1
+              stats['unique_words'][form] += 1
+              entries.append(create_redirect_entry(form, effective_root))
+
+        # Add conjugation redirects
+        # if "v., inf." in definition:
+        #     stats['verbs_found'] += 1
+        #     for conjugated in extract_conjugations(definition):
+        #         entries.append(create_redirect_entry(conjugated, entry['word']))
+        #         stats['entries_written'] += 1
+        #         stats['tenses_added'] += 1
         
     stats['unique_word_count'] = len(stats['unique_words'])
     stats['max_definitions'] = max(stats['unique_words'].values(), default=0)
@@ -62,4 +110,6 @@ if __name__ == "__main__":
     print(f"Total entries written: {result['entries_written']}")
     print(f"Unique words: {result['unique_word_count']}")
     print(f"Max definitions for a single word: {result['max_definitions']}")
+    print(f"Total verbs found: {result['verbs_found']} this should result in {3*result['verbs_found']} tenses added")
+    print(f"Tenses added: {result['tenses_added']}")
     
