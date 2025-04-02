@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" 
+         unique-identifier="uid"
+         version="3.0">  <metadata>
+    <dc:title>Tagalog-English Dictionary</dc:title>
+    <dc:language>fil</dc:language>
+    <dc:identifier id="uid">tagalog-dict-v1</dc:identifier>
+    <dc:creator>Pedro Ferreira</dc:creator>
+
+    <x-metadata>
+        <DictionaryInLanguage>fil</DictionaryInLanguage>  <!-- Tagalog (ISO 639-2: fil) -->
+        <DictionaryOutLanguage>en-US</DictionaryOutLanguage>  <!-- English with regional variant -->
+        <DefaultLookupIndex>default</DefaultLookupIndex>
+    </x-metadata>
+  </metadata>
+  <manifest>
+    <item id="content" href="dictionary.html" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine>
+    <itemref idref="content"/>
+  </spine>
+</package>
