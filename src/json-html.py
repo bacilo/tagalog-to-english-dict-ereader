@@ -1,4 +1,5 @@
 import json
+import string
 import sys
 import re
 from html import escape
@@ -71,32 +72,40 @@ def json_to_kindle_html(input_file, output_file):
         data = json.load(f)
     
     entries = []
+    entries_dict = {}
+
     for entry in data:
-        stats['total_read'] += 1
+
         word = escape(entry['word'])
-        stats['unique_words'][word] += 1
 
-        definition = escape(entry['definition'])
+        if word not in entries_dict:
+            entries_dict[word] = {
+                'word': word,
+                'definitions': [],
+                'inflections': [],
+                'count': 0,
 
-        conjugated_forms = f''''''
-        root, conjugations = extract_conjugations(definition)
+            }
+            entries_dict[word]['inflections'].append(generate_inflections(word))
+
+        entries_dict[word]['definitions'].append(escape(entry['definition']))
+        entries_dict[word]['count'] += 1
+
+        root, conjugations = extract_conjugations(escape(entry['definition']))
         if conjugations:
-          conjugated_forms = create_verb_inflections(conjugations)
+          entries_dict[word]['inflections'].append(create_verb_inflections(conjugations))
 
+    for key, value in entries_dict.items():
         entries.append(
             f"""<idx:entry name="default" scriptable="yes" spell="yes">
-              <h5><dt><idx:orth value="{escape(entry['word'].replace(' ', '_'))}">{escape(entry['word'])}
-                {conjugated_forms}
-                {generate_inflections(entry['word'])}
+              <h5><dt><idx:orth value="{key.replace(' ', '_')}">{key}
+                {''.join(value['inflections'])}
               </idx:orth></dt></h5>
-              <dd>{definition}</dd>
+              <dd>{''.join("{}) {}<br>".format(n, i) for n, i in zip(string.ascii_uppercase, value['definitions']))}</dd>
             </idx:entry>
             <hr/>"""
         )
-        stats['entries_written'] += 1
         
-    stats['unique_word_count'] = len(stats['unique_words'])
-    stats['max_definitions'] = max(stats['unique_words'].values(), default=0)
 
     html_template = f"""<html xmlns:idx="https://kindlegen.s3.amazonaws.com/AmazonKindlePublishingGuidelines.pdf">
       <head><meta charset="utf-8"></head>
@@ -122,11 +131,4 @@ if __name__ == "__main__":
     output_file = sys.argv[2]
     
     result = json_to_kindle_html(input_file, output_file)
-
-    print(f"Total entries read: {result['total_read']}")
-    print(f"Total entries written: {result['entries_written']}")
-    print(f"Unique words: {result['unique_word_count']}")
-    print(f"Max definitions for a single word: {result['max_definitions']}")
-    print(f"Total verbs found: {result['verbs_found']} this should result in {3*result['verbs_found']} tenses added")
-    print(f"Tenses added: {result['tenses_added']}")
     

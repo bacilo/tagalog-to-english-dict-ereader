@@ -4,3 +4,13 @@ __pycache__/
 .idea/
 *.env
 .DS_Store
+
+
+data/tagalog_dict_test.json
+res/dictionary_test.html
+res/dictionary_test.mobi
+res/dictionary_test.opf
+res/dictionary_v2.kpf
+res/dictionary_v2.mobi
+src/test_regex.py
+src/testing.py
