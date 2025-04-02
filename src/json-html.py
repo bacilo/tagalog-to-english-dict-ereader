@@ -18,23 +18,6 @@ def extract_conjugations(definition):
         return match.group(1).strip(), [c.strip() for c in match.group(1).split(',')]
     return None, []
 
-def generate_inflections(word):
-    """Generate common Tagalog inflections"""
-    inflections = []
-    
-    # Ligatures (-ng/-g/na)
-    if word[-1].lower() in {'a', 'e', 'i', 'o', 'u', 'n'}:
-        inflections.append(f"{word}ng")
-        inflections.append(f"{word}g")
-    else:
-        inflections.append(f"{word}na")
-    
-    # Common prefixes
-    for prefix in ['maka', 'naka', 'makaka', 'nakaka']:
-        inflections.append(f"{prefix}{word}")
-    
-    return list(set(inflections))  # Remove duplicates
-
 def ligature_inflection(word):
     if word[-1].lower() in {'a', 'e', 'i', 'o', 'u'}:
         return f"{word}ng"
