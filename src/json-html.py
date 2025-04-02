@@ -4,11 +4,6 @@ import re
 from html import escape
 from collections import defaultdict
 
-# def extract_conjugations(definition):
-#     """Extract conjugated forms from parentheses pattern"""
-#     match = re.match(r'^(\w+)\s+\(([^)]+)\)\s+v\., inf\.', definition)
-#     return [word.strip() for word in match.group(1).split(',')] if match else []
-
 # Enhanced regex pattern
 CONJUGATION_PATTERN = re.compile(
     r'\(+((?:\([^)]+\)|[^),])+?(?:,\s*(?:\([^)]+\)|[^),])+?){2})\)'  # Handles nested conjugations
@@ -23,14 +18,61 @@ def extract_conjugations(definition):
         return match.group(1).strip(), [c.strip() for c in match.group(1).split(',')]
     return None, []
 
-def create_redirect_entry(conjugated_form, root_word):
-    """Generate Kindle-compatible cross-reference entry"""
+def generate_inflections(word):
+    """Generate common Tagalog inflections"""
+    inflections = []
+    
+    # Ligatures (-ng/-g/na)
+    if word[-1].lower() in {'a', 'e', 'i', 'o', 'u', 'n'}:
+        inflections.append(f"{word}ng")
+        inflections.append(f"{word}g")
+    else:
+        inflections.append(f"{word}na")
+    
+    # Common prefixes
+    for prefix in ['maka', 'naka', 'makaka', 'nakaka']:
+        inflections.append(f"{prefix}{word}")
+    
+    return list(set(inflections))  # Remove duplicates
+
+def ligature_inflection(word):
+    if word[-1].lower() in {'a', 'e', 'i', 'o', 'u'}:
+        return f"{word}ng"
+    if word[-1].lower() == 'n':
+        return f"{word}g"
+    return None
+
+def generate_ligature_inflection(word):
+    new_inflection = ligature_inflection(word)
+    if new_inflection is None:
+      return f''''''
     return f'''
-    <idx:entry name="default" scriptable="yes" spell="yes">
-      <h5><dt><idx:orth>{escape(conjugated_form)}</idx:orth></dt></h5>
-      <dd>See: <a href="entry://{escape(root_word)}">{escape(root_word)}</a></dd>
-    </idx:entry>
-    <hr/>'''
+    <idx:iform value="{new_inflection}" />
+    '''
+
+def generate_inflections(word):
+    inflections = []
+    inflections.append(generate_ligature_inflection(word))
+    if inflections:
+        return f'''
+        <idx:infl inflgrp="other">
+        {' '.join(inflections)}
+        </idx:infl>
+        '''
+    else:
+        return f''''''
+
+def create_verb_inflections(conjugated_forms):
+    return f'''
+    <idx:infl inflgrp="verb">
+    <idx:iform name="progressive" value="{conjugated_forms[0]}" />
+    {generate_ligature_inflection(conjugated_forms[0])}
+    <idx:iform name="completed" value="{conjugated_forms[1]}" />
+    {generate_ligature_inflection(conjugated_forms[1])}
+    <idx:iform name="contemplated" value="{conjugated_forms[2]}" />
+    {generate_ligature_inflection(conjugated_forms[2])}
+    </idx:infl>
+    '''
 
 def json_to_kindle_html(input_file, output_file):
     stats = {
@@ -41,7 +83,7 @@ def json_to_kindle_html(input_file, output_file):
         'verbs_found': 0,
         'tenses_added': 0
     }
-    
+
     with open(input_file, 'r', encoding='utf-8') as f:
         data = json.load(f)
     
@@ -52,31 +94,23 @@ def json_to_kindle_html(input_file, output_file):
         stats['unique_words'][word] += 1
 
         definition = escape(entry['definition'])
+
+        conjugated_forms = f''''''
+        root, conjugations = extract_conjugations(definition)
+        if conjugations:
+          conjugated_forms = create_verb_inflections(conjugations)
+
         entries.append(
             f"""<idx:entry name="default" scriptable="yes" spell="yes">
-              <h5><dt><idx:orth>{word}</idx:orth></dt></h5>
+              <h5><dt><idx:orth value="{escape(entry['word'].replace(' ', '_'))}">{escape(entry['word'])}
+                {conjugated_forms}
+                {generate_inflections(entry['word'])}
+              </idx:orth></dt></h5>
               <dd>{definition}</dd>
             </idx:entry>
             <hr/>"""
         )
         stats['entries_written'] += 1
-
-        root, conjugations = extract_conjugations(definition)
-        if conjugations:
-          stats['verbs_found'] += 1
-          effective_root = root or entry['word'].lower()
-          for form in conjugations:
-              stats['tenses_added'] += 1
-              stats['unique_words'][form] += 1
-              entries.append(create_redirect_entry(form, effective_root))
-
-        # Add conjugation redirects
-        # if "v., inf." in definition:
-        #     stats['verbs_found'] += 1
-        #     for conjugated in extract_conjugations(definition):
-        #         entries.append(create_redirect_entry(conjugated, entry['word']))
-        #         stats['entries_written'] += 1
-        #         stats['tenses_added'] += 1
         
     stats['unique_word_count'] = len(stats['unique_words'])
     stats['max_definitions'] = max(stats['unique_words'].values(), default=0)
