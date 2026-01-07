@@ -1,11 +1,37 @@
+# Virtual environments
 .venv/
+venv/
+env/
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+*.egg
+dist-pkg/
+build/
+
+# IDE
 .idea/
-*.env
+.vscode/
+*.swp
+*.swo
+
+# OS
 .DS_Store
 
+# Environment
+*.env
+.env.*
 
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Old test files (legacy)
 data/tagalog_dict_test.json
 res/dictionary_test.html
 res/dictionary_test.mobi
