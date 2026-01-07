@@ -71,13 +71,18 @@ python -m tagalog_dict -v data/tagalog_dict.json dist/dictionary.html
 ### Building the Dictionary
 
 ```bash
-# Full build process
+# HTML only
 ./scripts/build.sh
+
+# HTML and .mobi (requires Calibre)
+./scripts/build.sh --mobi
 
 # Or manually:
 python -m tagalog_dict data/tagalog_dict.json dist/dictionary.html
-# Then use kindlegen or Kindle Previewer to create .mobi
+ebook-convert dist/dictionary.html dist/dictionary.mobi --output-profile kindle
 ```
+
+**Note:** The `.mobi` file is not tracked in git. Build it locally with `--mobi`.
 
 ### Validation
 

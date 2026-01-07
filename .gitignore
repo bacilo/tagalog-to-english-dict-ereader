@@ -31,6 +31,11 @@ build/
 htmlcov/
 .mypy_cache/
 
+# Generated artifacts (build locally with ./scripts/build.sh --mobi)
+dist/*.mobi
+dist/*.azw3
+dist/*.kpf
+
 # Old test files (legacy)
 data/tagalog_dict_test.json
 res/dictionary_test.html

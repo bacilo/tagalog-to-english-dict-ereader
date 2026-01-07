@@ -6,6 +6,10 @@
 # Usage:
 #   ./scripts/build.sh           # Generate HTML only
 #   ./scripts/build.sh --mobi    # Generate HTML and .mobi
+#
+# Requirements:
+#   - Python 3.10+ with tagalog_dict package installed
+#   - Calibre (for --mobi): brew install calibre
 
 set -e
 
@@ -15,7 +19,6 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 INPUT_JSON="$PROJECT_DIR/data/tagalog_dict.json"
 OUTPUT_HTML="$PROJECT_DIR/dist/dictionary.html"
 OUTPUT_MOBI="$PROJECT_DIR/dist/dictionary.mobi"
-OPF_FILE="$PROJECT_DIR/res/dictionary.opf"
 
 echo "=== Tagalog Dictionary Build ==="
 echo ""
@@ -46,18 +49,28 @@ if [ "$1" = "--mobi" ]; then
     echo ""
     echo "Generating .mobi file..."
 
-    if command -v kindlegen &> /dev/null; then
-        # Copy HTML to res/ temporarily for kindlegen
-        cp "$OUTPUT_HTML" "$PROJECT_DIR/res/dictionary.html"
-        cd "$PROJECT_DIR/res"
-        kindlegen dictionary.opf -o dictionary.mobi
-        mv dictionary.mobi "$OUTPUT_MOBI"
-        rm dictionary.html
-        cd "$PROJECT_DIR"
-        echo "Generated: $OUTPUT_MOBI"
+    if command -v ebook-convert &> /dev/null; then
+        ebook-convert "$OUTPUT_HTML" "$OUTPUT_MOBI" \
+            --output-profile kindle \
+            --no-inline-toc \
+            --mobi-file-type old \
+            2>&1 | grep -E "(Output saved|error|Error)" || true
+
+        if [ -f "$OUTPUT_MOBI" ]; then
+            echo "Generated: $OUTPUT_MOBI"
+            ls -lh "$OUTPUT_MOBI"
+        else
+            echo "Error: Failed to generate .mobi"
+            exit 1
+        fi
     else
-        echo "Warning: kindlegen not found. Install it or use Kindle Previewer to create .mobi"
-        echo "Manual command: kindlegen $OPF_FILE -o dictionary.mobi"
+        echo "Error: Calibre not found."
+        echo ""
+        echo "Install Calibre to generate .mobi files:"
+        echo "  macOS:  brew install calibre"
+        echo "  Linux:  sudo apt install calibre"
+        echo "  Or download from: https://calibre-ebook.com/download"
+        exit 1
     fi
 fi
 
