@@ -118,6 +118,40 @@ After generating output, verify:
 
 ---
 
+## Git Workflow
+
+**Always work on a feature branch, not directly on main.**
+
+```bash
+# Start new work
+git checkout main
+git pull origin main
+git checkout -b feature/description-of-change
+
+# Make changes, commit frequently
+git add -A
+git commit -m "type: description"
+
+# When ready, create PR or merge
+git checkout main
+git merge feature/description-of-change
+git push origin main
+
+# Clean up
+git branch -d feature/description-of-change
+```
+
+### Commit Message Conventions
+
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `refactor:` - Code restructuring without behavior change
+- `test:` - Adding or updating tests
+- `docs:` - Documentation changes
+- `dist:` - Updated generated output files
+
+---
+
 ## Common Pitfalls
 
 ### HTML Escaping
