@@ -9,7 +9,7 @@
 #
 # Requirements:
 #   - Python 3.10+ with tagalog_dict package installed
-#   - Calibre (for --mobi): brew install calibre
+#   - Calibre (for --mobi): https://calibre-ebook.com/download
 
 set -e
 
@@ -19,6 +19,24 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 INPUT_JSON="$PROJECT_DIR/data/tagalog_dict.json"
 OUTPUT_HTML="$PROJECT_DIR/dist/dictionary.html"
 OUTPUT_MOBI="$PROJECT_DIR/dist/dictionary.mobi"
+
+# Find ebook-convert (Calibre)
+find_ebook_convert() {
+    # Check if in PATH
+    if command -v ebook-convert &> /dev/null; then
+        echo "ebook-convert"
+        return 0
+    fi
+
+    # Check macOS app bundle location
+    local macos_path="/Applications/calibre.app/Contents/MacOS/ebook-convert"
+    if [ -x "$macos_path" ]; then
+        echo "$macos_path"
+        return 0
+    fi
+
+    return 1
+}
 
 echo "=== Tagalog Dictionary Build ==="
 echo ""
@@ -49,8 +67,10 @@ if [ "$1" = "--mobi" ]; then
     echo ""
     echo "Generating .mobi file..."
 
-    if command -v ebook-convert &> /dev/null; then
-        ebook-convert "$OUTPUT_HTML" "$OUTPUT_MOBI" \
+    EBOOK_CONVERT=$(find_ebook_convert) || true
+
+    if [ -n "$EBOOK_CONVERT" ]; then
+        "$EBOOK_CONVERT" "$OUTPUT_HTML" "$OUTPUT_MOBI" \
             --output-profile kindle \
             --no-inline-toc \
             --mobi-file-type old \
@@ -67,9 +87,10 @@ if [ "$1" = "--mobi" ]; then
         echo "Error: Calibre not found."
         echo ""
         echo "Install Calibre to generate .mobi files:"
-        echo "  macOS:  brew install calibre"
-        echo "  Linux:  sudo apt install calibre"
-        echo "  Or download from: https://calibre-ebook.com/download"
+        echo "  Download from: https://calibre-ebook.com/download"
+        echo ""
+        echo "Or add to PATH if already installed:"
+        echo "  export PATH=\"\$PATH:/Applications/calibre.app/Contents/MacOS\""
         exit 1
     fi
 fi
